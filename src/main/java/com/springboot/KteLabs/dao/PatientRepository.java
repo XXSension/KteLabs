@@ -8,7 +8,5 @@ import java.util.List;
 import java.util.UUID;
 
 public interface PatientRepository extends JpaRepository<Patients,Integer> {
-    Patients findById(int id);
-
     Patients findByUuid(UUID uuid);
 }

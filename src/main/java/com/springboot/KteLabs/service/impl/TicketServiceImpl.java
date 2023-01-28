@@ -1,10 +1,12 @@
 package com.springboot.KteLabs.service.impl;
 
 import com.springboot.KteLabs.dao.DoctorRepository;
+import com.springboot.KteLabs.dao.PatientRepository;
 import com.springboot.KteLabs.dao.TicketRepository;
 import com.springboot.KteLabs.entity.Doctors;
 import com.springboot.KteLabs.entity.Patients;
 import com.springboot.KteLabs.entity.Ticket;
+import com.springboot.KteLabs.exception_handling.NoSuchTicketException;
 import com.springboot.KteLabs.interfaces.Timetable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,13 @@ public class TicketServiceImpl implements com.springboot.KteLabs.service.TicketS
     @Autowired
     private DoctorRepository doctorRepository;
 
+    @Autowired
+    private PatientRepository patientRepository;
+
+
+    /*
+    * Создание слотов времени для доктора
+    */
     @Override
     public List<Ticket> createTimetable(Timetable timetable) {
         LocalDateTime startOfWorking = this.getTimestampDateOfAppointment(timetable.getDateOfAppointment());
@@ -41,11 +50,17 @@ public class TicketServiceImpl implements com.springboot.KteLabs.service.TicketS
         return ticketList;
     }
 
+    /*
+    * Получение свободных слотов доктора на определенную дату
+    */
     @Override
     public List<Ticket> findAllByPatientIsNull(int id, String data) {
         List<Ticket> freeTicket = this.ticketRepository.findAllByPatientIsNullAndDoctorId(id);
-        return freeTicket.stream().filter(ticket -> ticket.getAppointmentTime().getDayOfYear()
-                == this.dateConversion(data).getDayOfYear()).collect(Collectors.toList());
+        if(freeTicket != null) {
+            return freeTicket.stream().filter(ticket -> ticket.getAppointmentTime().getDayOfYear()
+                    == this.dateConversion(data).getDayOfYear()).collect(Collectors.toList());
+        }
+        return null;
     }
 
 
@@ -53,16 +68,23 @@ public class TicketServiceImpl implements com.springboot.KteLabs.service.TicketS
     * Запись к врачу по id
     * */
     @Override
-    public Ticket doctorsAppointment(int id, Patients patient) {
-        Optional<Ticket> optional = this.ticketRepository.findById(id);
+    public Ticket doctorsAppointment(int ticketId, int patientId) {
+        Optional<Ticket> optional = this.ticketRepository.findById(ticketId);
         if (optional.isPresent()){
             Ticket ticket = optional.get();
-            if(ticket.getPatient() != null){
-                ticket.setPatient(patient);
+            if(ticket.getPatient() == null){
+                Optional<Patients> optionalPatient = this.patientRepository.findById(patientId);
+                if(optionalPatient.isPresent()){
+                    Patients patient = optionalPatient.get();
+                    ticket.setPatient(patient);
+                    ticketRepository.save(ticket);
+                }
+
             }
             return ticket;
+        } else {
+            return null;
         }
-        return null;
     }
 
 
@@ -128,7 +150,9 @@ public class TicketServiceImpl implements com.springboot.KteLabs.service.TicketS
                         listTimetable.get(i));
                 ticketList.add(ticket);
             }
-
+        } else {
+            throw new NoSuchTicketException("There is no doctor with id = "
+                    + timetable.getDoctorId() + "in Database");
         }
         return ticketList;
     }

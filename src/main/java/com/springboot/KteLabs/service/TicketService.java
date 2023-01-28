@@ -12,7 +12,7 @@ public interface TicketService {
 
     List<Ticket> findAllByPatientIsNull(int id, String data);
 
-    Ticket doctorsAppointment(int id, Patients patient);
+    Ticket doctorsAppointment(int ticketId, int patientId);
 //
 //    List<Ticket> getAllFreeTimetable(String date);
 //

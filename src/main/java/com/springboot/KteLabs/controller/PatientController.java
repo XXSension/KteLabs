@@ -1,6 +1,7 @@
 package com.springboot.KteLabs.controller;
 
 import com.springboot.KteLabs.entity.Ticket;
+import com.springboot.KteLabs.exception_handling.NoSuchTicketException;
 import com.springboot.KteLabs.service.PatientsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,13 +19,29 @@ public class PatientController {
     @Autowired
     private PatientsService patientsService;
 
+    /*
+     * Поиск всех слотов времени занятых одним пациентом по id
+     *  */
     @GetMapping("/{id}")
     public List<Ticket> findByAllTicketById(@PathVariable int id) {
-        return this.patientsService.findById(id);
+        List<Ticket> ticketList =  this.patientsService.findById(id);
+        if(ticketList == null) {
+            throw new NoSuchTicketException("There is no patient with id = "
+                    + id + " in Database");
+        }
+        return ticketList;
     }
 
-    @GetMapping("/{uuid}")
-    public List<Ticket> findByAllTicketByUUid(@PathVariable UUID id) {
-        return this.patientsService.findByUuid(id);
+    /*
+     * Поиск всех слотов времени занятых одним пациентом по uuid
+     *  */
+    @GetMapping("/uuid/{uuid}")
+    public List<Ticket> findByAllTicketByUUid(@PathVariable("uuid") UUID id) {
+        List<Ticket> ticketList =  this.patientsService.findByUuid(id);
+        if(ticketList == null) {
+            throw new NoSuchTicketException("There is no patient with uuid = "
+                    + id + "in Database");
+        }
+        return ticketList;
     }
 }
